@@ -1,0 +1,73 @@
+#include <WiFi.h>
+#include <WebServer.h>
+
+const char* ssid = "Rohitha";
+const char* password = "chaluikachalu";
+
+const int irSensorPin1 = 32;
+const int irSensorPin2 = 34;
+
+WebServer server(80);
+
+void setup() {
+  Serial.begin(9600);
+
+  pinMode(irSensorPin1, INPUT);
+  pinMode(irSensorPin2, INPUT);
+
+  WiFi.begin(ssid, password);
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(1000);
+    Serial.println("Connecting to WiFi...");
+  }
+
+  Serial.println("WiFi connected");
+  Serial.println("IP address: ");
+  Serial.println(WiFi.localIP());
+
+  server.on("/", handleRoot);
+
+  server.begin();
+  Serial.println("HTTP server started");
+}
+int sta1=0,sta2=0,count=0;
+void loop() {
+  server.handleClient();
+  int se1 = digitalRead(irSensorPin1);
+  int se2 = digitalRead(irSensorPin2);
+  if(se1==1){
+    sta1=1;
+  }
+  if(se1==0&sta1==1){
+    count=count+1;
+    sta1=0;
+  }
+  if(se2==1){
+    sta2=1;
+  }
+  if(se2==0&sta2==1){
+    count=count-1;
+    sta2=0;
+  }
+  digitalWrite(se1,0);
+  digitalWrite(se2,0);
+  /*
+  if (count<0){
+    count=0;
+  }*/
+  delay(20);
+}
+
+void handleRoot() {
+  int sensorState1 = digitalRead(irSensorPin1);
+  int sensorState2 = digitalRead(irSensorPin2);
+  String page = "<html><body>";
+  page += "<h1>IR Sensor Status</h1>";
+  page += "<p>vehical count ";
+  page += count;
+  page += "</p>";
+  page += "</body></html>";
+
+  server.send(200, "text/html", page);
+
+}
